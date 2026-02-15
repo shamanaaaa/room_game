@@ -1,8 +1,5 @@
 import { playDamageReceived } from './audio.js';
-
-const MAX_HP = 100;
-const RESPAWN_DELAY_MS = 2000;
-const HIT_FLASH_MS = 200;
+import { MAX_HP, RESPAWN_DELAY_MS, HIT_FLASH_MS } from './constants.js';
 
 export class CombatSystem {
     constructor(player, spawnPoint) {

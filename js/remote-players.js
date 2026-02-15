@@ -1,9 +1,9 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { clone as skeletonClone } from 'three/examples/jsm/utils/SkeletonUtils.js';
+import { PLAYER_HEIGHT, LERP_FACTOR } from './constants.js';
 
-const TARGET_HEIGHT = 0.03;
-const LERP_FACTOR = 0.15;
+const TARGET_HEIGHT = PLAYER_HEIGHT;
 const ANIM_NAMES = ['idle', 'walk', 'run', 'jump', 'fly'];
 
 async function loadGLB(url) {

@@ -1,7 +1,8 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { PLAYER_HEIGHT } from './constants.js';
 
-const TARGET_HEIGHT = 0.03; // match PLAYER_HEIGHT
+const TARGET_HEIGHT = PLAYER_HEIGHT;
 
 // Animation files to load (place in public/characters/)
 // The first found file is used as the base character model

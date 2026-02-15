@@ -1,0 +1,49 @@
+// ── Player scale ──
+export const PLAYER_HEIGHT = 0.1;
+export const EYE_HEIGHT = 0.08;
+
+// ── Movement ──
+export const WALK_SPEED = 0.25;        // m/s
+export const SPRINT_SPEED = 0.5;       // m/s
+export const FLY_SPEED = 1.0;          // m/s
+export const FLY_SPRINT_SPEED = 3.0;
+export const FLY_VERTICAL_SPEED = 0.8; // m/s
+
+// ── Physics ──
+export const GRAVITY = 5.0;
+export const JUMP_VELOCITY = 2;
+
+// ── Double-tap detection ──
+export const DOUBLE_TAP_MS = 300;
+
+// ── Third-person camera ──
+export const TP_DISTANCE = 0.08;
+export const TP_HEIGHT = 0.04;
+
+// ── Weapon ──
+export const MAGAZINE_SIZE = 12;
+export const FIRE_RATE_MS = 200;
+export const RELOAD_TIME_MS = 1500;
+export const BASE_DAMAGE = 25;
+export const MUZZLE_FLASH_MS = 50;
+export const TRACER_MS = 200;
+export const DECAL_LIFETIME_MS = 3000;
+export const RECOIL_AMOUNT = 0.015;    // radians
+export const RECOIL_RECOVERY = 8.0;    // per second
+
+// ── Body zone damage ──
+export const BODY_ZONES = [
+    { name: 'head',  minPct: 0.80, maxPct: 1.00, multiplier: 2.0 },
+    { name: 'body',  minPct: 0.45, maxPct: 0.80, multiplier: 1.0 },
+    { name: 'arms',  minPct: 0.45, maxPct: 0.80, multiplier: 0.75 },
+    { name: 'legs',  minPct: 0.00, maxPct: 0.45, multiplier: 0.5 },
+];
+export const ARM_X_THRESHOLD = 0.006;
+
+// ── Combat ──
+export const MAX_HP = 100;
+export const RESPAWN_DELAY_MS = 2000;
+export const HIT_FLASH_MS = 200;
+
+// ── Remote players ──
+export const LERP_FACTOR = 0.15;

@@ -1,25 +1,10 @@
 import * as THREE from 'three';
 import { playGunshot, playHeadshot, playHitConfirm } from './audio.js';
-
-const MAGAZINE_SIZE = 12;
-const FIRE_RATE_MS = 200;
-const RELOAD_TIME_MS = 1500;
-const BASE_DAMAGE = 25;
-const MUZZLE_FLASH_MS = 50;
-
-// Body zone damage multipliers (character height = 0.03)
-const BODY_ZONES = [
-    { name: 'head',  minPct: 0.80, maxPct: 1.00, multiplier: 2.0 },  // top 20% → 50 dmg
-    { name: 'body',  minPct: 0.45, maxPct: 0.80, multiplier: 1.0 },  // mid 35% → 25 dmg
-    { name: 'arms',  minPct: 0.45, maxPct: 0.80, multiplier: 0.75 }, // same zone, checked via X offset
-    { name: 'legs',  minPct: 0.00, maxPct: 0.45, multiplier: 0.5 },  // bottom 45% → 12 dmg
-];
-const ARM_X_THRESHOLD = 0.006; // world-space X offset from model center to count as arm hit
-const PLAYER_HEIGHT = 0.03;
-const TRACER_MS = 200;
-const DECAL_LIFETIME_MS = 3000;
-const RECOIL_AMOUNT = 0.015; // radians
-const RECOIL_RECOVERY = 8.0; // per second
+import {
+    MAGAZINE_SIZE, FIRE_RATE_MS, RELOAD_TIME_MS, BASE_DAMAGE, MUZZLE_FLASH_MS,
+    ARM_X_THRESHOLD, PLAYER_HEIGHT,
+    TRACER_MS, DECAL_LIFETIME_MS, RECOIL_AMOUNT, RECOIL_RECOVERY,
+} from './constants.js';
 
 export class Weapon {
     constructor(camera, scene, collisionMeshes, remoteManager) {

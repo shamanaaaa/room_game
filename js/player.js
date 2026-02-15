@@ -1,28 +1,12 @@
 import * as THREE from 'three';
 import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockControls.js';
 import { playFootstep } from './audio.js';
-
-// Player scale — 3 cm tall creature
-const PLAYER_HEIGHT = 0.03;
-const EYE_HEIGHT = 0.025;
-
-// Movement
-const WALK_SPEED = 0.25;   // m/s
-const SPRINT_SPEED = 0.5; // m/s
-const FLY_SPEED = 1.0;    // m/s
-const FLY_SPRINT_SPEED = 3.0;
-const FLY_VERTICAL_SPEED = 0.8; // m/s for up/down in fly mode
-
-// Physics
-const GRAVITY = 5.0;
-const JUMP_VELOCITY = 2;
-
-// Double-tap detection
-const DOUBLE_TAP_MS = 300;
-
-// Third-person camera
-const TP_DISTANCE = 0.08;  // distance behind player
-const TP_HEIGHT = 0.04;    // height above player
+import {
+    PLAYER_HEIGHT, EYE_HEIGHT,
+    WALK_SPEED, SPRINT_SPEED, FLY_SPEED, FLY_SPRINT_SPEED, FLY_VERTICAL_SPEED,
+    GRAVITY, JUMP_VELOCITY, DOUBLE_TAP_MS,
+    TP_DISTANCE, TP_HEIGHT,
+} from './constants.js';
 
 export class Player {
     /**
