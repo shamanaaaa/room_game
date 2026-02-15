@@ -14,6 +14,11 @@
             <p>Upload a 3D scan of your room to explore it as a tiny creature</p>
         </div>
 
+        <!-- Player Name -->
+        <div id="name-input-wrapper">
+            <input type="text" id="player-name" placeholder="Enter your name" maxlength="16" autocomplete="off" spellcheck="false">
+        </div>
+
         <!-- Mode Toggle -->
         <div id="mode-toggle">
             <button class="mode-btn active" data-mode="scan">3D Scan</button>
@@ -65,6 +70,7 @@
         <div id="player-count" style="display: none;">2 PLAYERS</div>
         <div id="view-indicator" style="display: none;">3RD PERSON</div>
         <div id="hp-bar"><div id="hp-fill"></div></div>
+        <div id="weapon-name">1 Pistol</div>
         <div id="ammo-counter">12 / 12</div>
         <div id="reload-indicator" style="display: none;">RELOADING</div>
         <div id="hit-marker"></div>
@@ -75,7 +81,16 @@
                 <p>Respawning...</p>
             </div>
         </div>
-        <div id="instructions">WASD move &bull; MOUSE look &bull; SPACE jump &bull; SHIFT sprint &bull; 2x SPACE fly &bull; C descend &bull; V view &bull; LMB shoot &bull; R reload</div>
+        <div id="scoreboard" style="display: none;">
+            <div class="scoreboard-inner">
+                <h3>SCOREBOARD</h3>
+                <table>
+                    <thead><tr><th>Player</th><th>Kills</th><th>Deaths</th></tr></thead>
+                    <tbody id="scoreboard-body"></tbody>
+                </table>
+            </div>
+        </div>
+        <div id="instructions">WASD move &bull; MOUSE look &bull; SPACE jump &bull; SHIFT sprint &bull; 2x SPACE fly &bull; C descend &bull; V view &bull; LMB shoot &bull; R reload &bull; 1/2 weapons &bull; TAB scoreboard</div>
         <div id="pause-overlay">
             <div class="pause-content">
                 <h2>ROOM<span>GAME</span></h2>

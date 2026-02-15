@@ -125,6 +125,8 @@ if (fs.existsSync(DIST_DIR)) {
 
 // Track players per room: { roomName: { playerId: lastState } }
 const rooms = {};
+// Track scores per room: { roomName: { playerId: { name, kills, deaths } } }
+const scores = {};
 // Map player IDs to sockets for targeted messages
 const playerSockets = {};
 
@@ -142,10 +144,15 @@ io.on('connection', (socket) => {
             socket.leave(currentRoom);
             if (rooms[currentRoom]) {
                 delete rooms[currentRoom][playerId];
+                if (scores[currentRoom]) {
+                    delete scores[currentRoom][playerId];
+                    io.to(currentRoom).emit('scoreboard', scores[currentRoom]);
+                }
                 io.to(currentRoom).emit('player-left', playerId);
                 io.to(currentRoom).emit('player-count', Object.keys(rooms[currentRoom]).length);
                 if (Object.keys(rooms[currentRoom]).length === 0) {
                     delete rooms[currentRoom];
+                    delete scores[currentRoom];
                 }
             }
         }
@@ -156,12 +163,18 @@ io.on('connection', (socket) => {
         if (!rooms[roomName]) rooms[roomName] = {};
         rooms[roomName][playerId] = null;
 
+        if (!scores[roomName]) scores[roomName] = {};
+        scores[roomName][playerId] = { name: 'Player', kills: 0, deaths: 0 };
+
         // Send existing players to the new player
         for (const [id, state] of Object.entries(rooms[roomName])) {
             if (id !== playerId && state) {
                 socket.emit('player-update', { id, ...state });
             }
         }
+
+        // Send current scoreboard to the new player
+        socket.emit('scoreboard', scores[roomName]);
 
         const count = Object.keys(rooms[roomName]).length;
         io.to(roomName).emit('player-count', count);
@@ -173,8 +186,27 @@ io.on('connection', (socket) => {
         if (rooms[currentRoom]) {
             rooms[currentRoom][playerId] = state;
         }
+        // Keep scoreboard name in sync
+        if (scores[currentRoom] && scores[currentRoom][playerId] && state.name) {
+            scores[currentRoom][playerId].name = state.name;
+        }
         // Broadcast to others in the same room
         socket.to(currentRoom).emit('player-update', { id: playerId, ...state });
+    });
+
+    socket.on('player-killed', (data) => {
+        if (!currentRoom || !scores[currentRoom]) return;
+        const killerId = data.killerId;
+        // Increment death for victim
+        if (scores[currentRoom][playerId]) {
+            scores[currentRoom][playerId].deaths++;
+        }
+        // Increment kill for attacker
+        if (killerId && scores[currentRoom][killerId]) {
+            scores[currentRoom][killerId].kills++;
+        }
+        // Broadcast updated scoreboard to everyone in room
+        io.to(currentRoom).emit('scoreboard', scores[currentRoom]);
     });
 
     socket.on('player-shoot', (hitInfo) => {
@@ -196,10 +228,15 @@ io.on('connection', (socket) => {
         delete playerSockets[playerId];
         if (currentRoom && rooms[currentRoom]) {
             delete rooms[currentRoom][playerId];
+            if (scores[currentRoom]) {
+                delete scores[currentRoom][playerId];
+                io.to(currentRoom).emit('scoreboard', scores[currentRoom]);
+            }
             io.to(currentRoom).emit('player-left', playerId);
             io.to(currentRoom).emit('player-count', Object.keys(rooms[currentRoom]).length);
             if (Object.keys(rooms[currentRoom]).length === 0) {
                 delete rooms[currentRoom];
+                delete scores[currentRoom];
             }
         }
     });

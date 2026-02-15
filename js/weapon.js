@@ -1,9 +1,9 @@
 import * as THREE from 'three';
-import { playGunshot, playHeadshot, playHitConfirm } from './audio.js';
+import { playGunshot, playRifleShot, playHeadshot, playHitConfirm } from './audio.js';
 import {
-    MAGAZINE_SIZE, FIRE_RATE_MS, RELOAD_TIME_MS, BASE_DAMAGE, MUZZLE_FLASH_MS,
     ARM_X_THRESHOLD, PLAYER_HEIGHT,
-    TRACER_MS, DECAL_LIFETIME_MS, RECOIL_AMOUNT, RECOIL_RECOVERY,
+    MUZZLE_FLASH_MS, TRACER_MS, DECAL_LIFETIME_MS,
+    WEAPONS,
 } from './constants.js';
 
 export class Weapon {
@@ -13,89 +13,164 @@ export class Weapon {
         this.collisionMeshes = collisionMeshes || [];
         this.remoteManager = remoteManager;
 
-        this.ammo = MAGAZINE_SIZE;
+        // Weapon configs
+        this._configs = WEAPONS;
+        this._currentKey = 'pistol';
+        this._cfg = this._configs[this._currentKey];
+
+        this.ammo = this._cfg.magazineSize;
         this.reloading = false;
         this._lastFireTime = 0;
         this._recoilOffset = 0;
+        this._holdingFire = false;
 
         // Cleanup lists
-        this._tracers = []; // { line, createdAt }
-        this._decals = []; // { mesh, createdAt }
-        this._flashes = []; // { light, sprite, createdAt }
+        this._tracers = [];
+        this._decals = [];
+        this._flashes = [];
 
         // Raycaster
         this._raycaster = new THREE.Raycaster();
         this._raycaster.far = 50;
 
-        // HUD refs (set later)
+        // HUD refs
         this._ammoEl = null;
         this._reloadEl = null;
+        this._weaponNameEl = null;
 
-        // Build the procedural pistol model
-        this._gunGroup = this._buildPistolModel();
+        // Build weapon models
+        this._gunModels = {
+            pistol: this._buildPistolModel(),
+            ak47: this._buildAK47Model(),
+        };
+
+        // Attach current weapon
+        this._gunGroup = this._gunModels[this._currentKey];
         this.camera.add(this._gunGroup);
 
         // Callbacks
-        this.onFire = null; // called with hit info for network sync
+        this.onFire = null;
+        this.onWeaponSwitch = null;
     }
 
-    setHUD(ammoEl, reloadEl) {
+    setHUD(ammoEl, reloadEl, weaponNameEl) {
         this._ammoEl = ammoEl;
         this._reloadEl = reloadEl;
+        this._weaponNameEl = weaponNameEl;
         this._updateAmmoHUD();
+        this._updateWeaponHUD();
+    }
+
+    get currentWeaponKey() {
+        return this._currentKey;
+    }
+
+    switchWeapon(key) {
+        if (key === this._currentKey) return;
+        if (!this._configs[key]) return;
+        if (this.reloading) return;
+
+        // Remove current model
+        this.camera.remove(this._gunGroup);
+
+        this._currentKey = key;
+        this._cfg = this._configs[key];
+        this._gunGroup = this._gunModels[key];
+        this.camera.add(this._gunGroup);
+
+        // Reset ammo for new weapon
+        this.ammo = this._cfg.magazineSize;
+        this.reloading = false;
+        this._lastFireTime = 0;
+        this._recoilOffset = 0;
+
+        this._updateAmmoHUD();
+        this._updateWeaponHUD();
+        if (this._reloadEl) this._reloadEl.style.display = 'none';
+
+        if (this.onWeaponSwitch) this.onWeaponSwitch(key);
     }
 
     _buildPistolModel() {
         const group = new THREE.Group();
 
-        // Materials
         const barrelMat = new THREE.MeshStandardMaterial({ color: 0x333333 });
         const gripMat = new THREE.MeshStandardMaterial({ color: 0x5c3a1e });
         const guardMat = new THREE.MeshStandardMaterial({ color: 0x222222 });
 
-        // Barrel (elongated box)
-        const barrel = new THREE.Mesh(
-            new THREE.BoxGeometry(0.003, 0.003, 0.012),
-            barrelMat
-        );
+        const barrel = new THREE.Mesh(new THREE.BoxGeometry(0.003, 0.003, 0.012), barrelMat);
         barrel.position.set(0, 0, -0.006);
         group.add(barrel);
 
-        // Slide (top part, slightly wider)
-        const slide = new THREE.Mesh(
-            new THREE.BoxGeometry(0.0035, 0.002, 0.013),
-            barrelMat
-        );
+        const slide = new THREE.Mesh(new THREE.BoxGeometry(0.0035, 0.002, 0.013), barrelMat);
         slide.position.set(0, 0.0025, -0.006);
         group.add(slide);
 
-        // Grip (angled box)
-        const grip = new THREE.Mesh(
-            new THREE.BoxGeometry(0.003, 0.008, 0.005),
-            gripMat
-        );
+        const grip = new THREE.Mesh(new THREE.BoxGeometry(0.003, 0.008, 0.005), gripMat);
         grip.position.set(0, -0.005, 0.001);
         grip.rotation.x = 0.15;
         group.add(grip);
 
-        // Trigger guard
-        const guard = new THREE.Mesh(
-            new THREE.BoxGeometry(0.001, 0.003, 0.004),
-            guardMat
-        );
+        const guard = new THREE.Mesh(new THREE.BoxGeometry(0.001, 0.003, 0.004), guardMat);
         guard.position.set(0, -0.003, -0.002);
         group.add(guard);
 
-        // Muzzle point (invisible, used for flash position)
-        const muzzlePoint = new THREE.Object3D();
-        muzzlePoint.position.set(0, 0.001, -0.013);
-        group.add(muzzlePoint);
-        this._muzzlePoint = muzzlePoint;
+        const muzzle = new THREE.Object3D();
+        muzzle.position.set(0, 0.001, -0.013);
+        group.add(muzzle);
+        group._muzzlePoint = muzzle;
 
-        // Position: bottom-right of screen in first-person
         group.position.set(0.001, -0.02, -0.03);
-        group.rotation.set(0, 0, 0);
+        return group;
+    }
 
+    _buildAK47Model() {
+        const group = new THREE.Group();
+
+        const metalMat = new THREE.MeshStandardMaterial({ color: 0x2a2a2a });
+        const woodMat = new THREE.MeshStandardMaterial({ color: 0x6b3a1f });
+        const darkMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1a });
+
+        // Long barrel
+        const barrel = new THREE.Mesh(new THREE.BoxGeometry(0.003, 0.003, 0.028), metalMat);
+        barrel.position.set(0, 0, -0.014);
+        group.add(barrel);
+
+        // Upper receiver
+        const receiver = new THREE.Mesh(new THREE.BoxGeometry(0.004, 0.004, 0.016), metalMat);
+        receiver.position.set(0, 0.001, -0.003);
+        group.add(receiver);
+
+        // Magazine (banana mag)
+        const mag = new THREE.Mesh(new THREE.BoxGeometry(0.003, 0.012, 0.004), darkMat);
+        mag.position.set(0, -0.006, -0.003);
+        mag.rotation.x = 0.2;
+        group.add(mag);
+
+        // Wooden handguard
+        const handguard = new THREE.Mesh(new THREE.BoxGeometry(0.0045, 0.004, 0.012), woodMat);
+        handguard.position.set(0, -0.001, -0.014);
+        group.add(handguard);
+
+        // Grip
+        const grip = new THREE.Mesh(new THREE.BoxGeometry(0.003, 0.008, 0.004), woodMat);
+        grip.position.set(0, -0.006, 0.003);
+        grip.rotation.x = 0.2;
+        group.add(grip);
+
+        // Stock
+        const stock = new THREE.Mesh(new THREE.BoxGeometry(0.003, 0.004, 0.012), woodMat);
+        stock.position.set(0, 0.0, 0.012);
+        group.add(stock);
+
+        // Muzzle point
+        const muzzle = new THREE.Object3D();
+        muzzle.position.set(0, 0.001, -0.029);
+        group.add(muzzle);
+        group._muzzlePoint = muzzle;
+
+        // Position: slightly lower and more centered than pistol
+        group.position.set(0.004, -0.022, -0.03);
         return group;
     }
 
@@ -107,7 +182,7 @@ export class Weapon {
         }
 
         const now = performance.now();
-        if (now - this._lastFireTime < FIRE_RATE_MS) return null;
+        if (now - this._lastFireTime < this._cfg.fireRateMs) return null;
         this._lastFireTime = now;
 
         this.ammo--;
@@ -121,7 +196,6 @@ export class Weapon {
         let playerMeshes = [];
         if (this.remoteManager) {
             playerMeshes = this.remoteManager.getHittableObjects();
-            // Force world matrix update on the model (parent) so hitbox world position is correct
             for (const p of playerMeshes) {
                 if (p.mesh.parent) p.mesh.parent.updateMatrixWorld(true);
             }
@@ -137,7 +211,6 @@ export class Weapon {
             const closest = hits[0];
             hitPoint = closest.point.clone();
 
-            // Check if we hit a player
             const hitPlayerEntry = playerMeshes.find(p => {
                 let obj = closest.object;
                 while (obj) {
@@ -170,49 +243,59 @@ export class Weapon {
                     type: 'wall',
                     point: { x: hitPoint.x, y: hitPoint.y, z: hitPoint.z },
                 };
-                // Create impact decal
                 this._createDecal(hitPoint, closest.face.normal);
             }
         }
 
         // Muzzle flash + sound
         this._createMuzzleFlash();
-        playGunshot();
+        if (this._currentKey === 'ak47') {
+            playRifleShot();
+        } else {
+            playGunshot();
+        }
 
         // Tracer line
         const muzzleWorld = new THREE.Vector3();
-        this._muzzlePoint.getWorldPosition(muzzleWorld);
+        this._gunGroup._muzzlePoint.getWorldPosition(muzzleWorld);
         const tracerEnd = hitPoint || muzzleWorld.clone().add(
             this._raycaster.ray.direction.clone().multiplyScalar(50)
         );
         this._createTracer(muzzleWorld, tracerEnd);
 
         // Camera recoil
-        this._recoilOffset += RECOIL_AMOUNT;
+        this._recoilOffset += this._cfg.recoilAmount;
 
         // Auto-reload if empty
         if (this.ammo <= 0) {
             setTimeout(() => this.reload(), 300);
         }
 
-        // Fire callback for network
         if (this.onFire) this.onFire(hitInfo);
-
         return hitInfo;
     }
 
+    // For auto weapons — call from mousedown/mouseup
+    startFiring() {
+        this._holdingFire = true;
+    }
+
+    stopFiring() {
+        this._holdingFire = false;
+    }
+
     reload() {
-        if (this.reloading || this.ammo === MAGAZINE_SIZE) return;
+        if (this.reloading || this.ammo === this._cfg.magazineSize) return;
 
         this.reloading = true;
         if (this._reloadEl) this._reloadEl.style.display = 'block';
 
         setTimeout(() => {
-            this.ammo = MAGAZINE_SIZE;
+            this.ammo = this._cfg.magazineSize;
             this.reloading = false;
             this._updateAmmoHUD();
             if (this._reloadEl) this._reloadEl.style.display = 'none';
-        }, RELOAD_TIME_MS);
+        }, this._cfg.reloadTimeMs);
     }
 
     setThirdPerson(enabled) {
@@ -222,12 +305,16 @@ export class Weapon {
     update(delta) {
         const now = performance.now();
 
+        // Auto-fire for automatic weapons
+        if (this._holdingFire && this._cfg.auto) {
+            this.fire();
+        }
+
         // Recoil recovery
         if (this._recoilOffset > 0) {
-            this._recoilOffset -= RECOIL_RECOVERY * delta;
+            this._recoilOffset -= this._cfg.recoilRecovery * delta;
             if (this._recoilOffset < 0) this._recoilOffset = 0;
         }
-        // Apply recoil to gun model (visual only, not camera)
         this._gunGroup.rotation.x = -this._recoilOffset * 3;
 
         // Clean up tracers
@@ -272,20 +359,24 @@ export class Weapon {
 
     _updateAmmoHUD() {
         if (this._ammoEl) {
-            this._ammoEl.textContent = `${this.ammo} / ${MAGAZINE_SIZE}`;
+            this._ammoEl.textContent = `${this.ammo} / ${this._cfg.magazineSize}`;
+        }
+    }
+
+    _updateWeaponHUD() {
+        if (this._weaponNameEl) {
+            this._weaponNameEl.textContent = `${this._cfg.slot} ${this._cfg.name}`;
         }
     }
 
     _createMuzzleFlash() {
         const muzzleWorld = new THREE.Vector3();
-        this._muzzlePoint.getWorldPosition(muzzleWorld);
+        this._gunGroup._muzzlePoint.getWorldPosition(muzzleWorld);
 
-        // Point light
         const light = new THREE.PointLight(0xffaa00, 2, 0.3);
         light.position.copy(muzzleWorld);
         this.scene.add(light);
 
-        // Sprite
         const spriteMat = new THREE.SpriteMaterial({
             color: 0xffcc00,
             transparent: true,
@@ -324,13 +415,8 @@ export class Weapon {
         });
         const mesh = new THREE.Mesh(geometry, material);
         mesh.position.copy(point);
-
-        // Offset slightly from surface to prevent z-fighting
         mesh.position.addScaledVector(normal, 0.0005);
-
-        // Orient to face along the surface normal
         mesh.lookAt(point.clone().add(normal));
-
         this.scene.add(mesh);
         this._decals.push({ mesh, createdAt: performance.now() });
     }
@@ -340,7 +426,6 @@ export class Weapon {
         const heightAboveFeet = hitPoint.y - modelPos.y;
         const heightPct = Math.max(0, Math.min(1, heightAboveFeet / PLAYER_HEIGHT));
 
-        // Check lateral offset for arm detection
         const dx = hitPoint.x - modelPos.x;
         const dz = hitPoint.z - modelPos.z;
         const lateralDist = Math.sqrt(dx * dx + dz * dz);
@@ -363,7 +448,7 @@ export class Weapon {
             multiplier = 0.5;
         }
 
-        return { zone, damage: Math.round(BASE_DAMAGE * multiplier) };
+        return { zone, damage: Math.round(this._cfg.baseDamage * multiplier) };
     }
 
     _showHitMarker(zone) {
@@ -386,7 +471,6 @@ export class Weapon {
         }, 600);
     }
 
-    // Create a tracer from a remote player's shot (visual only)
     createRemoteTracer(fromPos, toPos) {
         const from = new THREE.Vector3(fromPos.x, fromPos.y, fromPos.z);
         const to = new THREE.Vector3(toPos.x, toPos.y, toPos.z);
@@ -395,7 +479,6 @@ export class Weapon {
 
     dispose() {
         this.camera.remove(this._gunGroup);
-        // Clean up all effects
         for (const t of this._tracers) {
             this.scene.remove(t.line);
             t.line.geometry.dispose();

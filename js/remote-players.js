@@ -4,7 +4,27 @@ import { clone as skeletonClone } from 'three/examples/jsm/utils/SkeletonUtils.j
 import { PLAYER_HEIGHT, LERP_FACTOR } from './constants.js';
 
 const TARGET_HEIGHT = PLAYER_HEIGHT;
+const LABEL_HEIGHT_OFFSET = PLAYER_HEIGHT + 0.01;
 const ANIM_NAMES = ['idle', 'walk', 'run', 'jump', 'fly'];
+
+function createNameSprite(name) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 256;
+    canvas.height = 64;
+    const ctx = canvas.getContext('2d');
+    ctx.font = 'bold 32px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText(name || 'Player', 128, 32);
+
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.minFilter = THREE.LinearFilter;
+    const mat = new THREE.SpriteMaterial({ map: texture, depthTest: false, transparent: true });
+    const sprite = new THREE.Sprite(mat);
+    sprite.scale.set(0.04, 0.01, 1);
+    return sprite;
+}
 
 async function loadGLB(url) {
     const loader = new GLTFLoader();
@@ -95,6 +115,11 @@ export class RemotePlayerManager {
 
         this.scene.add(model);
 
+        // Name label sprite
+        const nameSprite = createNameSprite(state.name);
+        nameSprite.position.set(0, LABEL_HEIGHT_OFFSET, 0);
+        model.add(nameSprite);
+
         const entry = {
             model,
             mixer,
@@ -102,6 +127,8 @@ export class RemotePlayerManager {
             currentAnim: 'idle',
             targetPos: new THREE.Vector3(state.x, state.y - 0.025, state.z), // feet level
             targetYaw: state.yaw || 0,
+            nameSprite,
+            currentName: state.name || 'Player',
         };
 
         // Set initial position
@@ -123,6 +150,18 @@ export class RemotePlayerManager {
         // Update target position (feet level: y - EYE_HEIGHT)
         entry.targetPos.set(state.x, state.y - 0.025, state.z);
         entry.targetYaw = state.yaw || 0;
+
+        // Update name label if changed
+        const newName = state.name || 'Player';
+        if (newName !== entry.currentName) {
+            entry.model.remove(entry.nameSprite);
+            entry.nameSprite.material.map.dispose();
+            entry.nameSprite.material.dispose();
+            entry.nameSprite = createNameSprite(newName);
+            entry.nameSprite.position.set(0, LABEL_HEIGHT_OFFSET, 0);
+            entry.model.add(entry.nameSprite);
+            entry.currentName = newName;
+        }
 
         // Switch animation if changed
         const newAnim = state.anim;

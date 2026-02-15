@@ -1,13 +1,19 @@
+import * as THREE from 'three';
 import { playDamageReceived } from './audio.js';
-import { MAX_HP, RESPAWN_DELAY_MS, HIT_FLASH_MS } from './constants.js';
+import { MAX_HP, RESPAWN_DELAY_MS, HIT_FLASH_MS, EYE_HEIGHT } from './constants.js';
 
 export class CombatSystem {
-    constructor(player, spawnPoint) {
+    constructor(player, spawnPoint, roomBounds) {
         this.player = player;
         this.spawnPoint = spawnPoint.clone();
+        this.roomBounds = roomBounds;
         this.hp = MAX_HP;
         this.maxHp = MAX_HP;
         this.alive = true;
+        this._lastAttackerId = null;
+
+        // Called when this player dies — main.js sets this to send kill event
+        this.onDeath = null;
 
         // HUD refs (set later)
         this._hpFillEl = null;
@@ -24,9 +30,10 @@ export class CombatSystem {
         this._updateHPBar();
     }
 
-    takeDamage(amount) {
+    takeDamage(amount, attackerId) {
         if (!this.alive) return;
 
+        if (attackerId) this._lastAttackerId = attackerId;
         this.hp = Math.max(0, this.hp - amount);
         this._updateHPBar();
         this._flashHit();
@@ -39,6 +46,11 @@ export class CombatSystem {
 
     die() {
         this.alive = false;
+
+        if (this.onDeath) {
+            this.onDeath(this._lastAttackerId);
+        }
+        this._lastAttackerId = null;
 
         if (this._deathScreenEl) {
             this._deathScreenEl.style.display = 'flex';
@@ -56,10 +68,21 @@ export class CombatSystem {
             this._deathScreenEl.style.display = 'none';
         }
 
-        // Teleport player to spawn point
-        this.player.position.copy(this.spawnPoint);
-        this.player.camera.position.copy(this.spawnPoint);
+        // Teleport player to a random position on the map
+        const pos = this._getRandomSpawn();
+        this.player.position.copy(pos);
+        this.player.camera.position.copy(pos);
         this.player.velocityY = 0;
+    }
+
+    _getRandomSpawn() {
+        const hw = this.roomBounds.width / 2 * 0.8;
+        const hd = this.roomBounds.depth / 2 * 0.8;
+        return new THREE.Vector3(
+            (Math.random() - 0.5) * 2 * hw,
+            this.spawnPoint.y,
+            (Math.random() - 0.5) * 2 * hd,
+        );
     }
 
     getHPFraction() {

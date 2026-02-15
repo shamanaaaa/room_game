@@ -12,6 +12,10 @@ export const FLY_VERTICAL_SPEED = 0.8; // m/s
 // ── Physics ──
 export const GRAVITY = 5.0;
 export const JUMP_VELOCITY = 2;
+export const VOID_Y = -2.0; // kill player below this Y
+
+// ── Fly mode ──
+export const FLY_ENABLED = false;
 
 // ── Double-tap detection ──
 export const DOUBLE_TAP_MS = 300;
@@ -20,16 +24,36 @@ export const DOUBLE_TAP_MS = 300;
 export const TP_DISTANCE = 0.08;
 export const TP_HEIGHT = 0.04;
 
-// ── Weapon ──
-export const MAGAZINE_SIZE = 12;
-export const FIRE_RATE_MS = 200;
-export const RELOAD_TIME_MS = 1500;
-export const BASE_DAMAGE = 25;
+// ── Weapon shared ──
 export const MUZZLE_FLASH_MS = 50;
 export const TRACER_MS = 200;
 export const DECAL_LIFETIME_MS = 3000;
-export const RECOIL_AMOUNT = 0.015;    // radians
-export const RECOIL_RECOVERY = 8.0;    // per second
+
+// ── Weapon configs ──
+export const WEAPONS = {
+    pistol: {
+        name: 'Pistol',
+        slot: 1,
+        magazineSize: 12,
+        fireRateMs: 200,
+        reloadTimeMs: 1500,
+        baseDamage: 25,
+        recoilAmount: 0.015,
+        recoilRecovery: 8.0,
+        auto: false,
+    },
+    ak47: {
+        name: 'AK-47',
+        slot: 2,
+        magazineSize: 30,
+        fireRateMs: 100,
+        reloadTimeMs: 2500,
+        baseDamage: 18,
+        recoilAmount: 0.025,
+        recoilRecovery: 6.0,
+        auto: true,
+    },
+};
 
 // ── Body zone damage ──
 export const BODY_ZONES = [

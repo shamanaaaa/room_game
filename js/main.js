@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { loadScan } from './scan-loader.js';
 import { Player } from './player.js';
 import { loadCharacter } from './character-loader.js';
-import { connectToServer, sendPlayerState, onRemotePlayerUpdate, onRemotePlayerLeave, onPlayerCount, sendShootEvent, onPlayerShot, onDamageReceived } from './network.js';
+import { connectToServer, sendPlayerState, onRemotePlayerUpdate, onRemotePlayerLeave, onPlayerCount, sendShootEvent, onPlayerShot, onDamageReceived, sendKillEvent, onScoreboard } from './network.js';
 import { RemotePlayerManager } from './remote-players.js';
 import { Weapon } from './weapon.js';
 import { CombatSystem } from './combat.js';
@@ -33,6 +33,31 @@ const shareBtn = document.getElementById('share-btn');
 const API_BASE = window.location.hostname === 'localhost'
     ? 'http://localhost:3001'
     : window.location.origin;
+
+// ── Player Name (cookie) ──
+const playerNameInput = document.getElementById('player-name');
+
+function getCookie(name) {
+    const match = document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]*)'));
+    return match ? decodeURIComponent(match[1]) : '';
+}
+
+function setCookie(name, value) {
+    document.cookie = `${name}=${encodeURIComponent(value)};max-age=${60 * 60 * 24 * 365};path=/`;
+}
+
+// Restore saved name
+const savedName = getCookie('playerName');
+if (savedName) playerNameInput.value = savedName;
+
+// Save on change
+playerNameInput.addEventListener('input', () => {
+    setCookie('playerName', playerNameInput.value.trim());
+});
+
+export function getPlayerName() {
+    return playerNameInput.value.trim() || 'Player';
+}
 
 // ── State ──
 let currentMode = 'scan';
@@ -319,13 +344,14 @@ async function initGame() {
     weapon = new Weapon(camera, scene, collisionMeshes, remoteManager);
     weapon.setHUD(
         document.getElementById('ammo-counter'),
-        document.getElementById('reload-indicator')
+        document.getElementById('reload-indicator'),
+        document.getElementById('weapon-name')
     );
     weapon.onFire = (hitInfo) => sendShootEvent(hitInfo);
     player.setWeapon(weapon);
 
     // Combat system
-    combat = new CombatSystem(player, spawnPoint);
+    combat = new CombatSystem(player, spawnPoint, roomBounds);
     combat.setHUD(
         document.getElementById('hp-fill'),
         document.getElementById('hit-overlay'),
@@ -359,7 +385,32 @@ async function initGame() {
 
     // Receive damage from other players
     onDamageReceived((data) => {
-        combat.takeDamage(data.damage);
+        combat.takeDamage(data.damage, data.attackerId);
+    });
+
+    // Send kill event when we die
+    combat.onDeath = (killerId) => {
+        sendKillEvent(killerId);
+    };
+
+    // Scoreboard
+    const scoreboardEl = document.getElementById('scoreboard');
+    const scoreboardBody = document.getElementById('scoreboard-body');
+    onScoreboard((data) => {
+        updateScoreboardUI(scoreboardBody, data);
+    });
+
+    // TAB to toggle scoreboard
+    document.addEventListener('keydown', (e) => {
+        if (e.code === 'Tab') {
+            e.preventDefault();
+            scoreboardEl.style.display = 'flex';
+        }
+    });
+    document.addEventListener('keyup', (e) => {
+        if (e.code === 'Tab') {
+            scoreboardEl.style.display = 'none';
+        }
     });
 
     // Player count HUD
@@ -438,6 +489,21 @@ function updateDust(dust, time) {
     dust.points.geometry.attributes.position.needsUpdate = true;
 }
 
+// ── Scoreboard ──
+
+function updateScoreboardUI(tbody, data) {
+    const rows = Object.entries(data)
+        .map(([, s]) => s)
+        .sort((a, b) => b.kills - a.kills || a.deaths - b.deaths);
+
+    tbody.innerHTML = '';
+    for (const s of rows) {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${s.name}</td><td>${s.kills}</td><td>${s.deaths}</td>`;
+        tbody.appendChild(tr);
+    }
+}
+
 // ── Game Loop ──
 
 function animate() {
@@ -448,7 +514,7 @@ function animate() {
     player.update(delta);
 
     // Send local player state to server
-    sendPlayerState(player.getNetworkState());
+    sendPlayerState({ ...player.getNetworkState(), name: getPlayerName() });
 
     // Update remote players
     if (remoteManager) {

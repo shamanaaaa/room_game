@@ -4,7 +4,7 @@ import { playFootstep } from './audio.js';
 import {
     PLAYER_HEIGHT, EYE_HEIGHT,
     WALK_SPEED, SPRINT_SPEED, FLY_SPEED, FLY_SPRINT_SPEED, FLY_VERTICAL_SPEED,
-    GRAVITY, JUMP_VELOCITY, DOUBLE_TAP_MS,
+    GRAVITY, JUMP_VELOCITY, VOID_Y, FLY_ENABLED, DOUBLE_TAP_MS,
     TP_DISTANCE, TP_HEIGHT,
 } from './constants.js';
 
@@ -140,15 +140,29 @@ export class Player {
                 case 'KeyR':
                     if (this.weapon) this.weapon.reload();
                     break;
+                case 'Digit1':
+                    if (this.weapon) this.weapon.switchWeapon('pistol');
+                    break;
+                case 'Digit2':
+                    if (this.weapon) this.weapon.switchWeapon('ak47');
+                    break;
             }
         });
 
         // Shooting (left mouse button)
         document.addEventListener('mousedown', (e) => {
             if (!this.controls.isLocked) return;
-            if (e.button !== 0) return; // left click only
+            if (e.button !== 0) return;
             if (this.combat && !this.combat.alive) return;
-            if (this.weapon) this.weapon.fire();
+            if (this.weapon) {
+                this.weapon.fire();
+                this.weapon.startFiring();
+            }
+        });
+
+        document.addEventListener('mouseup', (e) => {
+            if (e.button !== 0) return;
+            if (this.weapon) this.weapon.stopFiring();
         });
 
         document.addEventListener('keyup', (e) => {
@@ -172,6 +186,7 @@ export class Player {
     }
 
     _handleSpaceTap() {
+        if (!FLY_ENABLED) return;
         const now = performance.now();
         if (now - this._lastSpaceTap < DOUBLE_TAP_MS) {
             this.flying = !this.flying;
@@ -250,6 +265,12 @@ export class Player {
             this.camera.position.x = Math.max(-halfW, Math.min(halfW, this.camera.position.x));
             this.camera.position.z = Math.max(-halfD, Math.min(halfD, this.camera.position.z));
             this.position.copy(this.camera.position);
+        }
+
+        // Void death — fell off the map
+        const currentY = this.thirdPerson ? this.position.y : this.camera.position.y;
+        if (currentY < VOID_Y && this.combat && this.combat.alive) {
+            this.combat.die();
         }
 
         // Sync character model to player position

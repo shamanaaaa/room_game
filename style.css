@@ -46,6 +46,35 @@ body {
     font-size: 1rem;
 }
 
+/* ── Player Name Input ── */
+
+#name-input-wrapper {
+    margin-bottom: 1.5rem;
+}
+
+#player-name {
+    background: #111;
+    border: 1px solid #222;
+    border-radius: 8px;
+    padding: 0.7rem 1.2rem;
+    font-size: 1rem;
+    color: #e0e0e0;
+    text-align: center;
+    width: 260px;
+    font-family: inherit;
+    letter-spacing: 0.05em;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+#player-name::placeholder {
+    color: #444;
+}
+
+#player-name:focus {
+    border-color: #4ecdc4;
+}
+
 /* ── Mode Toggle ── */
 
 #mode-toggle {
@@ -581,6 +610,21 @@ body {
     border-radius: 3px;
 }
 
+/* Weapon Name */
+#weapon-name {
+    position: fixed;
+    bottom: 3rem;
+    right: 1.5rem;
+    color: rgba(78, 205, 196, 0.7);
+    font-family: 'Courier New', monospace;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    pointer-events: none;
+    z-index: 10;
+}
+
 /* Ammo Counter */
 #ammo-counter {
     position: fixed;
@@ -670,6 +714,71 @@ body {
     color: rgba(255, 255, 255, 0.5);
     font-size: 0.9rem;
     letter-spacing: 0.15em;
+}
+
+/* Scoreboard */
+#scoreboard {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.75);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 25;
+    pointer-events: none;
+}
+
+.scoreboard-inner {
+    background: #111;
+    border: 1px solid #333;
+    border-radius: 10px;
+    padding: 1.5rem 2rem;
+    min-width: 320px;
+    max-width: 460px;
+}
+
+.scoreboard-inner h3 {
+    text-align: center;
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.25em;
+    color: #4ecdc4;
+    margin-bottom: 1rem;
+}
+
+.scoreboard-inner table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.scoreboard-inner th {
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    color: #666;
+    text-transform: uppercase;
+    text-align: left;
+    padding: 0.4rem 0.8rem;
+    border-bottom: 1px solid #222;
+}
+
+.scoreboard-inner th:nth-child(2),
+.scoreboard-inner th:nth-child(3),
+.scoreboard-inner td:nth-child(2),
+.scoreboard-inner td:nth-child(3) {
+    text-align: center;
+    width: 60px;
+}
+
+.scoreboard-inner td {
+    font-size: 0.9rem;
+    color: #e0e0e0;
+    padding: 0.5rem 0.8rem;
+    border-bottom: 1px solid #1a1a1a;
+}
+
+.scoreboard-inner tr:last-child td {
+    border-bottom: none;
 }
 
 /* Vignette effect */

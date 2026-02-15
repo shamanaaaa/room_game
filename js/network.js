@@ -71,6 +71,16 @@ export function onDamageReceived(callback) {
     socket.on('player-damage', callback);
 }
 
+export function sendKillEvent(killerId) {
+    if (!socket || !socket.connected) return;
+    socket.emit('player-killed', { killerId });
+}
+
+export function onScoreboard(callback) {
+    if (!socket) return;
+    socket.on('scoreboard', callback);
+}
+
 export function getMyId() {
     return myId;
 }

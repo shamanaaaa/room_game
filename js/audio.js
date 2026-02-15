@@ -61,6 +61,52 @@ export function playGunshot() {
     osc.stop(now + 0.08);
 }
 
+export function playRifleShot() {
+    const c = ensureResumed();
+    const now = c.currentTime;
+
+    // Louder, deeper crack with longer tail
+    const bufferSize = c.sampleRate * 0.12;
+    const buffer = c.createBuffer(1, bufferSize, c.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+        data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufferSize, 8);
+    }
+    const noise = c.createBufferSource();
+    noise.buffer = buffer;
+
+    const bp = c.createBiquadFilter();
+    bp.type = 'bandpass';
+    bp.frequency.value = 600;
+    bp.Q.value = 1.0;
+
+    // Deep thump
+    const osc = c.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(120, now);
+    osc.frequency.exponentialRampToValueAtTime(35, now + 0.1);
+
+    const oscGain = c.createGain();
+    oscGain.gain.setValueAtTime(0.6, now);
+    oscGain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+
+    const noiseGain = c.createGain();
+    noiseGain.gain.setValueAtTime(0.5, now);
+    noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+
+    const master = c.createGain();
+    master.gain.value = 0.35;
+
+    noise.connect(bp).connect(noiseGain).connect(master);
+    osc.connect(oscGain).connect(master);
+    master.connect(c.destination);
+
+    noise.start(now);
+    noise.stop(now + 0.12);
+    osc.start(now);
+    osc.stop(now + 0.1);
+}
+
 export function playHeadshot() {
     const c = ensureResumed();
     const now = c.currentTime;
