@@ -1,6 +1,8 @@
 import { io } from 'socket.io-client';
 
-const SERVER_URL = 'http://localhost:3001';
+const SERVER_URL = window.location.hostname === 'localhost'
+    ? 'http://localhost:3001'
+    : window.location.origin;
 const SEND_RATE_MS = 66; // ~15 Hz
 
 let socket = null;

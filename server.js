@@ -13,7 +13,8 @@ const io = new Server(server, {
     cors: { origin: '*' },
 });
 
-const PORT = 3001;
+const PORT = process.env.PORT || 3001;
+const DIST_DIR = path.join(__dirname, 'dist');
 
 const MAPS_DIR = path.join(__dirname, 'maps');
 const MAPS_JSON = path.join(MAPS_DIR, 'maps.json');
@@ -30,6 +31,11 @@ if (!fs.existsSync(MAPS_JSON)) {
 
 // CORS for Vite dev server
 app.use(cors());
+
+// Serve built frontend (production)
+if (fs.existsSync(DIST_DIR)) {
+    app.use(express.static(DIST_DIR));
+}
 
 // Serve map files statically
 app.use('/maps', express.static(MAPS_DIR));
@@ -107,6 +113,13 @@ app.delete('/api/maps/:id', (req, res) => {
     fs.writeFileSync(MAPS_JSON, JSON.stringify(maps, null, 2));
     res.json({ success: true });
 });
+
+// SPA fallback — serve index.html for any non-API route
+if (fs.existsSync(DIST_DIR)) {
+    app.get('/{*splat}', (req, res) => {
+        res.sendFile(path.join(DIST_DIR, 'index.html'));
+    });
+}
 
 // ── Socket.IO Multiplayer ──
 
@@ -192,6 +205,6 @@ io.on('connection', (socket) => {
     });
 });
 
-server.listen(PORT, () => {
-    console.log(`RoomGame server running on http://localhost:${PORT}`);
+server.listen(PORT, '0.0.0.0', () => {
+    console.log(`RoomGame server running on port ${PORT}`);
 });

@@ -30,7 +30,9 @@ const communityUpload = document.getElementById('community-upload');
 const communityMapsList = document.getElementById('community-maps-list');
 const shareBtn = document.getElementById('share-btn');
 
-const API_BASE = 'http://localhost:3001';
+const API_BASE = window.location.hostname === 'localhost'
+    ? 'http://localhost:3001'
+    : window.location.origin;
 
 // ── State ──
 let currentMode = 'scan';

@@ -108,7 +108,7 @@ export class Weapon {
         this._muzzlePoint = muzzlePoint;
 
         // Position: bottom-right of screen in first-person
-        group.position.set(0.015, -0.012, -0.03);
+        group.position.set(0.001, -0.02, -0.03);
         group.rotation.set(0, 0, 0);
 
         return group;
