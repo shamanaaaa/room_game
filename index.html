@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RoomGame</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Upload Screen -->
+    <div id="upload-screen">
+        <div class="upload-header">
+            <h1>ROOM<span>GAME</span></h1>
+            <p>Upload a 3D scan of your room to explore it as a tiny creature</p>
+        </div>
+
+        <!-- Mode Toggle -->
+        <div id="mode-toggle">
+            <button class="mode-btn active" data-mode="scan">3D Scan</button>
+            <button class="mode-btn" data-mode="community">Community</button>
+        </div>
+
+        <!-- 3D Scan Upload -->
+        <div id="scan-upload" class="upload-mode active">
+            <div id="scan-dropzone">
+                <div class="dropzone-icon">&#9651;</div>
+                <p class="dropzone-label">Drop 3D model here or click to browse</p>
+                <p class="dropzone-hint">Supports .glb, .fbx, .obj — from Scaniverse, Fab, Blender, etc.</p>
+                <input type="file" id="scan-input" accept=".glb,.gltf,.fbx,.obj">
+            </div>
+            <div id="scan-info" style="display: none;">
+                <span id="scan-filename"></span>
+                <button id="scan-clear">&#10005;</button>
+            </div>
+        </div>
+
+        <!-- Community Maps -->
+        <div id="community-upload" class="upload-mode">
+            <div id="community-maps-list">
+                <p id="community-loading">Loading maps...</p>
+            </div>
+        </div>
+
+        <!-- Upload to Community button (shown in scan mode after file selected) -->
+        <button id="share-btn" style="display: none;">Share to Community</button>
+
+        <button id="enter-btn" disabled>Enter Room</button>
+        <p class="hint" id="hint-text">Upload a 3D model (.glb, .fbx, .obj) to start</p>
+    </div>
+
+    <!-- Loading Screen -->
+    <div id="loading-screen" style="display: none;">
+        <div class="loading-content">
+            <h2>ROOM<span>GAME</span></h2>
+            <p>Loading your room...</p>
+            <div class="loading-bar"><div class="loading-fill"></div></div>
+        </div>
+    </div>
+
+    <!-- Game Screen -->
+    <div id="game-screen" style="display: none;">
+        <canvas id="game-canvas"></canvas>
+        <div id="crosshair"></div>
+        <div id="fly-indicator" style="display: none;">FLYING</div>
+        <div id="player-count" style="display: none;">2 PLAYERS</div>
+        <div id="view-indicator" style="display: none;">3RD PERSON</div>
+        <div id="hp-bar"><div id="hp-fill"></div></div>
+        <div id="ammo-counter">12 / 12</div>
+        <div id="reload-indicator" style="display: none;">RELOADING</div>
+        <div id="hit-marker"></div>
+        <div id="hit-overlay"></div>
+        <div id="death-screen" style="display: none;">
+            <div class="death-content">
+                <h2>YOU DIED</h2>
+                <p>Respawning...</p>
+            </div>
+        </div>
+        <div id="instructions">WASD move &bull; MOUSE look &bull; SPACE jump &bull; SHIFT sprint &bull; 2x SPACE fly &bull; C descend &bull; V view &bull; LMB shoot &bull; R reload</div>
+        <div id="pause-overlay">
+            <div class="pause-content">
+                <h2>ROOM<span>GAME</span></h2>
+                <p>Click to play</p>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="/js/main.js"></script>
+</body>
+</html>
