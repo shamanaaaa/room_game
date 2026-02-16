@@ -146,23 +146,40 @@ export class Player {
                 case 'Digit2':
                     if (this.weapon) this.weapon.switchWeapon('ak47');
                     break;
+                case 'Digit3':
+                    if (this.weapon) this.weapon.switchWeapon('sniper');
+                    break;
+                case 'Digit4':
+                    if (this.weapon) this.weapon.switchWeapon('bazooka');
+                    break;
             }
         });
 
         // Shooting (left mouse button)
         document.addEventListener('mousedown', (e) => {
             if (!this.controls.isLocked) return;
-            if (e.button !== 0) return;
-            if (this.combat && !this.combat.alive) return;
-            if (this.weapon) {
-                this.weapon.fire();
-                this.weapon.startFiring();
+            if (e.button === 0) {
+                if (this.combat && !this.combat.alive) return;
+                if (this.weapon) {
+                    this.weapon.fire();
+                    this.weapon.startFiring();
+                }
+            } else if (e.button === 2) {
+                // Right-click: toggle zoom/ADS
+                e.preventDefault();
+                if (this.weapon) this.weapon.toggleZoom();
             }
         });
 
         document.addEventListener('mouseup', (e) => {
-            if (e.button !== 0) return;
-            if (this.weapon) this.weapon.stopFiring();
+            if (e.button === 0) {
+                if (this.weapon) this.weapon.stopFiring();
+            }
+        });
+
+        // Disable context menu so right-click works for zoom
+        document.addEventListener('contextmenu', (e) => {
+            if (this.controls.isLocked) e.preventDefault();
         });
 
         document.addEventListener('keyup', (e) => {

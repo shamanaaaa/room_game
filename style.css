@@ -639,6 +639,26 @@ body {
     z-index: 10;
 }
 
+/* Pickup Text */
+#pickup-text {
+    position: fixed;
+    top: 55%;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    font-weight: bold;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #4ecdc4;
+    text-shadow: 0 0 8px rgba(78, 205, 196, 0.5);
+    pointer-events: none;
+    z-index: 16;
+    opacity: 0;
+    display: none;
+    transition: opacity 0.5s ease;
+}
+
 /* Reload Indicator */
 #reload-indicator {
     position: fixed;
@@ -779,6 +799,41 @@ body {
 
 .scoreboard-inner tr:last-child td {
     border-bottom: none;
+}
+
+/* Scope Overlay */
+#scope-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 15;
+    pointer-events: none;
+    background: radial-gradient(
+        circle at center,
+        transparent 28%,
+        rgba(0, 0, 0, 0.3) 30%,
+        rgba(0, 0, 0, 0.95) 38%,
+        #000 40%
+    );
+}
+
+#scope-overlay::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: rgba(255, 255, 255, 0.15);
+}
+
+#scope-overlay::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: rgba(255, 255, 255, 0.15);
 }
 
 /* Vignette effect */

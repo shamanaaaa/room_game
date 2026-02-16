@@ -107,6 +107,65 @@ export function playRifleShot() {
     osc.stop(now + 0.1);
 }
 
+export function playSniperShot() {
+    const c = ensureResumed();
+    const now = c.currentTime;
+
+    // Heavy boom with sharp crack and long echo tail
+    const bufferSize = c.sampleRate * 0.18;
+    const buffer = c.createBuffer(1, bufferSize, c.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+        data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufferSize, 5);
+    }
+    const noise = c.createBufferSource();
+    noise.buffer = buffer;
+
+    const bp = c.createBiquadFilter();
+    bp.type = 'bandpass';
+    bp.frequency.value = 400;
+    bp.Q.value = 0.6;
+
+    // Deep heavy thump
+    const osc = c.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(80, now);
+    osc.frequency.exponentialRampToValueAtTime(25, now + 0.2);
+
+    const oscGain = c.createGain();
+    oscGain.gain.setValueAtTime(0.7, now);
+    oscGain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+
+    const noiseGain = c.createGain();
+    noiseGain.gain.setValueAtTime(0.6, now);
+    noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+
+    // High crack
+    const crack = c.createOscillator();
+    crack.type = 'sawtooth';
+    crack.frequency.setValueAtTime(1800, now);
+    crack.frequency.exponentialRampToValueAtTime(400, now + 0.05);
+
+    const crackGain = c.createGain();
+    crackGain.gain.setValueAtTime(0.3, now);
+    crackGain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+
+    const master = c.createGain();
+    master.gain.value = 0.4;
+
+    noise.connect(bp).connect(noiseGain).connect(master);
+    osc.connect(oscGain).connect(master);
+    crack.connect(crackGain).connect(master);
+    master.connect(c.destination);
+
+    noise.start(now);
+    noise.stop(now + 0.18);
+    osc.start(now);
+    osc.stop(now + 0.2);
+    crack.start(now);
+    crack.stop(now + 0.05);
+}
+
 export function playHeadshot() {
     const c = ensureResumed();
     const now = c.currentTime;
@@ -203,4 +262,138 @@ export function playDamageReceived() {
     osc.connect(gain).connect(c.destination);
     osc.start(now);
     osc.stop(now + 0.15);
+}
+
+export function playRocketLaunch() {
+    const c = ensureResumed();
+    const now = c.currentTime;
+
+    // Whoosh — rising noise burst
+    const bufferSize = c.sampleRate * 0.3;
+    const buffer = c.createBuffer(1, bufferSize, c.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+        data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufferSize, 3);
+    }
+    const noise = c.createBufferSource();
+    noise.buffer = buffer;
+
+    const bp = c.createBiquadFilter();
+    bp.type = 'bandpass';
+    bp.frequency.setValueAtTime(300, now);
+    bp.frequency.linearRampToValueAtTime(800, now + 0.15);
+    bp.Q.value = 1.0;
+
+    const noiseGain = c.createGain();
+    noiseGain.gain.setValueAtTime(0.5, now);
+    noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+
+    // Low thump
+    const osc = c.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(60, now);
+    osc.frequency.exponentialRampToValueAtTime(20, now + 0.15);
+    const oscGain = c.createGain();
+    oscGain.gain.setValueAtTime(0.4, now);
+    oscGain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+
+    const master = c.createGain();
+    master.gain.value = 0.5;
+
+    noise.connect(bp).connect(noiseGain).connect(master);
+    osc.connect(oscGain).connect(master);
+    master.connect(c.destination);
+
+    noise.start(now);
+    noise.stop(now + 0.3);
+    osc.start(now);
+    osc.stop(now + 0.15);
+}
+
+export function playExplosion() {
+    const c = ensureResumed();
+    const now = c.currentTime;
+
+    // Heavy explosion — long rumbling noise + deep sine boom
+    const bufferSize = c.sampleRate * 0.6;
+    const buffer = c.createBuffer(1, bufferSize, c.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+        data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufferSize, 2);
+    }
+    const noise = c.createBufferSource();
+    noise.buffer = buffer;
+
+    const lp = c.createBiquadFilter();
+    lp.type = 'lowpass';
+    lp.frequency.setValueAtTime(600, now);
+    lp.frequency.exponentialRampToValueAtTime(80, now + 0.5);
+
+    const noiseGain = c.createGain();
+    noiseGain.gain.setValueAtTime(0.7, now);
+    noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
+
+    // Deep boom
+    const osc = c.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(50, now);
+    osc.frequency.exponentialRampToValueAtTime(15, now + 0.4);
+    const oscGain = c.createGain();
+    oscGain.gain.setValueAtTime(0.8, now);
+    oscGain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+
+    // Mid crackle
+    const osc2 = c.createOscillator();
+    osc2.type = 'sawtooth';
+    osc2.frequency.setValueAtTime(200, now);
+    osc2.frequency.exponentialRampToValueAtTime(40, now + 0.2);
+    const osc2Gain = c.createGain();
+    osc2Gain.gain.setValueAtTime(0.3, now);
+    osc2Gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+
+    const master = c.createGain();
+    master.gain.value = 0.5;
+
+    noise.connect(lp).connect(noiseGain).connect(master);
+    osc.connect(oscGain).connect(master);
+    osc2.connect(osc2Gain).connect(master);
+    master.connect(c.destination);
+
+    noise.start(now);
+    noise.stop(now + 0.6);
+    osc.start(now);
+    osc.stop(now + 0.4);
+    osc2.start(now);
+    osc2.stop(now + 0.2);
+}
+
+export function playAmmoPickup() {
+    const c = ensureResumed();
+    const now = c.currentTime;
+
+    // Rising chime — two quick ascending tones
+    const osc1 = c.createOscillator();
+    osc1.type = 'sine';
+    osc1.frequency.setValueAtTime(600, now);
+
+    const osc2 = c.createOscillator();
+    osc2.type = 'sine';
+    osc2.frequency.setValueAtTime(900, now + 0.06);
+
+    const gain1 = c.createGain();
+    gain1.gain.setValueAtTime(0.2, now);
+    gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+
+    const gain2 = c.createGain();
+    gain2.gain.setValueAtTime(0.001, now);
+    gain2.gain.setValueAtTime(0.2, now + 0.06);
+    gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+
+    osc1.connect(gain1).connect(c.destination);
+    osc2.connect(gain2).connect(c.destination);
+
+    osc1.start(now);
+    osc1.stop(now + 0.08);
+    osc2.start(now + 0.06);
+    osc2.stop(now + 0.15);
 }

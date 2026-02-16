@@ -6,6 +6,7 @@ import { connectToServer, sendPlayerState, onRemotePlayerUpdate, onRemotePlayerL
 import { RemotePlayerManager } from './remote-players.js';
 import { Weapon } from './weapon.js';
 import { CombatSystem } from './combat.js';
+import { AmmoBoxManager } from './ammo-boxes.js';
 
 // ── DOM refs ──
 const uploadScreen = document.getElementById('upload-screen');
@@ -251,7 +252,7 @@ shareBtn.addEventListener('click', async () => {
 
 // ── Game ──
 
-let scene, camera, renderer, player, clock, dustParticles, remoteManager, weapon, combat;
+let scene, camera, renderer, player, clock, dustParticles, remoteManager, weapon, combat, ammoBoxes;
 
 async function initGame() {
     uploadScreen.style.display = 'none';
@@ -345,7 +346,8 @@ async function initGame() {
     weapon.setHUD(
         document.getElementById('ammo-counter'),
         document.getElementById('reload-indicator'),
-        document.getElementById('weapon-name')
+        document.getElementById('weapon-name'),
+        document.getElementById('scope-overlay')
     );
     weapon.onFire = (hitInfo) => sendShootEvent(hitInfo);
     player.setWeapon(weapon);
@@ -358,6 +360,10 @@ async function initGame() {
         document.getElementById('death-screen')
     );
     player.setCombat(combat);
+    weapon.setPlayerRefs(player.position, combat);
+
+    // Ammo box drops
+    ammoBoxes = new AmmoBoxManager(scene, roomBounds, collisionMeshes);
 
     // Use map name as room ID for auto-join lobby
     const roomId = name || 'default';
@@ -519,6 +525,14 @@ function animate() {
     // Update remote players
     if (remoteManager) {
         remoteManager.update(delta);
+    }
+
+    // Ammo box drops
+    if (ammoBoxes) {
+        const pickup = ammoBoxes.update(delta, player.position);
+        if (pickup && weapon) {
+            weapon.addMagazine(pickup.weaponKey);
+        }
     }
 
     updateDust(dustParticles, elapsed);
